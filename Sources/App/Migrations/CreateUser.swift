@@ -1,14 +1,15 @@
 import Fluent
 
-struct CreateTodo: Migration {
+struct CreateUser: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("todos")
+        return database.schema("users")
             .id()
-            .field("title", .string, .required)
+            .field("first_name", .string, .required)
+            //.field()
             .create()
     }
 
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("todos").delete()
+        return database.schema("users").delete()
     }
 }

@@ -11,6 +11,17 @@ struct LoginRequestBody: Content {
 }
 
 
+struct SignUpResponse: Content {
+    let isSuccess: Bool
+}
+
+struct SignUpRequestBody: Content {
+    let username: String
+    let email: String
+    let password: String
+}
+
+
 func routes(_ app: Application) throws {
     
     // MARK:
@@ -35,6 +46,25 @@ func routes(_ app: Application) throws {
         
         return LoginResponse(isSuccess: isSuccessLogin)
     }
+    
+    
+    app.post("api", "v1", "signup") { req -> SignUpResponse in
+        guard let bodyData = req.body.data else {
+            throw Abort(.badRequest)
+        }
 
-    try app.register(collection: TodoController())
+        
+        let decodedData = try JSONDecoder().decode(SignUpRequestBody.self, from: bodyData)
+        
+        // il faudrait enregistrer l'utilisateur dans la base de donnée
+        
+        // let userController = UserController()
+        // userController.create(req: req)
+        
+        
+        
+        return SignUpResponse(isSuccess: true)
+    }
+
+    try app.register(collection: UserController())
 }
