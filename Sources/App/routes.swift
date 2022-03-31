@@ -54,12 +54,17 @@ func routes(_ app: Application) throws {
         }
 
         
+        
         let decodedData = try JSONDecoder().decode(SignUpRequestBody.self, from: bodyData)
         
-        // il faudrait enregistrer l'utilisateur dans la base de donnée
         
-        // let userController = UserController()
-        // userController.create(req: req)
+        let user = User(
+            id: nil,
+            firstName: decodedData.username
+        )
+        
+        
+        try await user.save(on: req.db)
         
         
         

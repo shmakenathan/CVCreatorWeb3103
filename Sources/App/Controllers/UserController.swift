@@ -10,20 +10,27 @@ struct UserController: RouteCollection {
             user.delete(use: delete)
         }
     }
-
-    func index(req: Request) -> EventLoopFuture<[User]> {
-        return User.query(on: req.db).all()
+    
+    func index(req: Request) async throws -> [User] {
+        return try await User.query(on: req.db).all()
     }
 
-    func create(req: Request) throws -> EventLoopFuture<User> {
+    func create(req: Request) async throws -> HTTPStatus  {
         let user = try req.content.decode(User.self)
-        return user.save(on: req.db).map { user }
+        try await user.save(on: req.db)
+        return .created
     }
 
-    func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        return User.find(req.parameters.get("userID"), on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .flatMap { $0.delete(on: req.db) }
-            .transform(to: .ok)
+    func delete(req: Request) async throws -> HTTPStatus {
+        
+        let userIdToDelete: UUID? = req.parameters.get("userID")
+        
+        guard let userToDelete = try? await User.find(userIdToDelete, on: req.db) else {
+            return .notFound
+        }
+        
+        try await userToDelete.delete(on: req.db)
+        
+        return .ok
     }
 }
