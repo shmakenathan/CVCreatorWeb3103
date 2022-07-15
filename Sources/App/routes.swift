@@ -19,6 +19,7 @@ struct SignUpRequestBody: Content {
     let username: String
     let email: String
     let password: String
+    let passwordConfirmation: String
 }
 
 
@@ -31,20 +32,30 @@ func routes(_ app: Application) throws {
 
     
     
+    
     app.post("api", "v1", "login") { req -> LoginResponse in
         guard let bodyData = req.body.data else {
             throw Abort(.badRequest)
         }
 
-        
         let decodedData = try JSONDecoder().decode(LoginRequestBody.self, from: bodyData)
         
-        print(decodedData.password)
-        let isValidUser = decodedData.username == "Nathan123"
-        let isValidPassword = decodedData.password == "password123"
-        let isSuccessLogin = isValidUser && isValidPassword
+    
+        guard let user = try await User
+            .query(on: req.db)
+            .filter(User.self, \.$username == decodedData.username)
+            .first()
+        else {
+            throw Abort(.notFound)
+        }
         
-        return LoginResponse(isSuccess: isSuccessLogin)
+        let loginHashedPassword = try Bcrypt.hash(decodedData.password)
+        
+        guard user.passwordHash == loginHashedPassword else {
+            throw Abort(.unauthorized)
+        }
+        
+        return LoginResponse(isSuccess: true)
     }
     
     
@@ -52,15 +63,21 @@ func routes(_ app: Application) throws {
         guard let bodyData = req.body.data else {
             throw Abort(.badRequest)
         }
-
+        
         
         
         let decodedData = try JSONDecoder().decode(SignUpRequestBody.self, from: bodyData)
         
         
+        guard decodedData.password == decodedData.passwordConfirmation else {
+            throw Abort(.badRequest, reason: "Password and password confirmation are different")
+        }
+        
+        
         let user = User(
-            id: nil,
-            firstName: decodedData.username
+            username: decodedData.username,
+            email: decodedData.email,
+            passwordHash: try Bcrypt.hash(decodedData.password)
         )
         
         

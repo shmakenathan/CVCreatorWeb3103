@@ -7,16 +7,37 @@ final class User: Model, Content {
     @ID(key: .id)
     var id: UUID?
 
-    @Field(key: "first_name")
-    var firstName: String
+    @Field(key: "username")
+    var username: String
     
-//    @Field(key: "last_name")
-//    var lastName: String
+    @Field(key: "email")
+    var email: String
+    
+    @Field(key: "password_hash")
+    var passwordHash: String
 
     init() { }
 
-    init(id: UUID? = nil, firstName: String) {
+    init(
+        id: UUID? = nil,
+        username: String,
+        email: String,
+        passwordHash: String
+    ) {
         self.id = id
-        self.firstName = firstName
+        self.username = username
+        self.email = email
+        self.passwordHash = passwordHash
+    }
+}
+
+
+extension User: ModelAuthenticatable {
+    static let usernameKey = \User.$email
+    static let passwordHashKey = \User.$passwordHash
+    
+    
+    func verify(password: String) throws -> Bool {
+        try Bcrypt.verify(password, created: self.passwordHash)
     }
 }
